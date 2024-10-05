@@ -26,15 +26,33 @@ describe('ProductCard', () => {
         );
     });
 
-    it('should render product details correctly', () => {
-        const { getByText, getByAltText } = render(
-            <ProductCard {...mockProduct} />
-        );
+    it('should render product name correctly', () => {
+        const { getByText } = render(<ProductCard {...mockProduct} />);
 
         expect(getByText(mockProduct.name)).toBeInTheDocument();
+    });
+
+    it('should render product description correctly', () => {
+        const { getByText } = render(<ProductCard {...mockProduct} />);
+
         expect(getByText(mockProduct.description)).toBeInTheDocument();
+    });
+
+    it('should render product price correctly', () => {
+        const { getByText } = render(<ProductCard {...mockProduct} />);
+
         expect(getByText('999 $')).toBeInTheDocument();
+    });
+
+    it('should render product category correctly', () => {
+        const { getByText } = render(<ProductCard {...mockProduct} />);
+
         expect(getByText(mockProduct.category)).toBeInTheDocument();
+    });
+
+    it('should render product alt name correctly', () => {
+        const { getByAltText } = render(<ProductCard {...mockProduct} />);
+
         expect(getByAltText(mockProduct.name)).toBeInTheDocument();
     });
 

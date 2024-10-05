@@ -63,7 +63,13 @@ describe('MainPage', () => {
         (useProducts as jest.Mock).mockReturnValue(mockProducts);
         (applyCategories as jest.Mock).mockReturnValue(mockProducts);
         (updateCategories as jest.Mock).mockImplementation(
-            (selected, clicked) => [...selected, clicked]
+            (selected, clicked) => {
+                return selected.includes(clicked)
+                    ? selected.filter(
+                          (category: Category) => category !== clicked
+                      )
+                    : [...selected, clicked];
+            }
         );
 
         (Categories as jest.Mock).mockImplementation(
@@ -118,6 +124,21 @@ describe('MainPage', () => {
 
         expect(updateCategories).toHaveBeenCalledWith([], 'Электроника');
         expect(categoryButton).toHaveClass('categories__badge_selected');
+    });
+
+    it('should update the selected categories when a category is clicked again', () => {
+        render(<MainPage />);
+
+        const categoryButton = screen.getByText('Электроника');
+        fireEvent.click(categoryButton);
+        expect(categoryButton).toHaveClass('categories__badge_selected');
+        expect(updateCategories).toHaveBeenCalledWith([], 'Электроника');
+        fireEvent.click(categoryButton);
+        expect(updateCategories).toHaveBeenCalledWith(
+            ['Электроника'],
+            'Электроника'
+        );
+        expect(categoryButton).not.toHaveClass('categories__badge_selected');
     });
 
     it('should render filtered products when categories are selected', () => {
