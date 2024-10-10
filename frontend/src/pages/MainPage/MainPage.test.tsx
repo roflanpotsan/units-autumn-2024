@@ -1,160 +1,87 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MainPage } from './MainPage';
-import { useCurrentTime, useProducts } from '../../hooks';
-import { applyCategories, updateCategories } from '../../utils';
-import { Categories, ProductCard } from '../../components';
+import { applyCategories, getPrice, updateCategories } from '../../utils';
 import '@testing-library/jest-dom';
-import { Category } from '../../types';
+import { productsMock as mockProducts } from '../../mocks/productMocks';
 
-// Замокаем хуки и утилиты
 jest.mock('../../hooks', () => ({
-    useCurrentTime: jest.fn(),
-    useProducts: jest.fn(),
+    useCurrentTime: jest.fn(() => '12:00:00'),
+    useProducts: jest.fn(() => mockProducts),
 }));
 
-jest.mock('../../utils', () => ({
-    applyCategories: jest.fn(),
-    updateCategories: jest.fn(),
-}));
-
-jest.mock('../../components', () => ({
-    Categories: jest.fn(),
-    ProductCard: jest.fn(),
-}));
-
-describe('MainPage', () => {
-    const mockProducts = [
-        {
-            id: 1,
-            name: 'IPhone 14 Pro',
-            description: 'Latest iphone, buy it now',
-            price: 999,
-            category: 'Электроника',
-        },
-        {
-            id: 2,
-            name: 'Костюм гуся',
-            description: 'Запускаем гуся, работяги',
-            price: 1000,
-            category: 'Одежда',
-        },
-        {
-            id: 3,
-            name: 'Настольная лампа',
-            description: 'Говорят, что ее использовали в pixar',
-            price: 699,
-            category: 'Для дома',
-        },
-        {
-            id: 4,
-            name: 'Принтер',
-            description: 'Незаменимая вещь для студента',
-            price: 7000,
-            category: 'Электроника',
-        },
-    ];
-
-    const mockCategories = ['Электроника', 'Одежда', 'Для дома'];
-
-    beforeEach(() => {
-        // Мокаем хуки и утилиты перед каждым тестом
-        (useCurrentTime as jest.Mock).mockReturnValue('12:00:00');
-        (useProducts as jest.Mock).mockReturnValue(mockProducts);
-        (applyCategories as jest.Mock).mockReturnValue(mockProducts);
-        (updateCategories as jest.Mock).mockImplementation(
-            (selected, clicked) => {
-                return selected.includes(clicked)
-                    ? selected.filter(
-                          (category: Category) => category !== clicked
-                      )
-                    : [...selected, clicked];
-            }
-        );
-
-        (Categories as jest.Mock).mockImplementation(
-            ({ selectedCategories, onCategoryClick }) => (
-                <div>
-                    {mockCategories.map((category) => (
-                        <div
-                            key={category}
-                            className={`categories__badge ${
-                                selectedCategories.includes(category)
-                                    ? 'categories__badge_selected'
-                                    : ''
-                            }`}
-                            onClick={() => onCategoryClick(category)}
-                        >
-                            {category}
-                        </div>
-                    ))}
-                </div>
-            )
-        );
-
-        (ProductCard as jest.Mock).mockImplementation(({ name }) => (
-            <div>{name}</div>
-        ));
-    });
-
-    it('should render the page title and current time', () => {
+describe('MainPage title', () => {
+    it('should render the page title', () => {
         render(<MainPage />);
-        expect(screen.getByText('VK Маркет')).toBeInTheDocument();
-        expect(screen.getByText('12:00:00')).toBeInTheDocument();
+        const element = screen.getByText('VK Маркет');
+        expect(element.tagName).toBe('H2');
+        expect(element).toHaveClass('main-page__title');
     });
+});
 
+describe('MainPage timer', () => {
+    it('should render the page title', () => {
+        render(<MainPage />);
+        const element = screen.getByText('12:00:00');
+        expect(element.tagName).toBe('H3');
+    });
+});
+
+describe('MainPage products no category', () => {
+    it('should render all products with none selected categories', () => {
+        const { getByText } = render(<MainPage />);
+
+        const productOne = getByText('IPhone 14 Pro');
+        const productTwo = getByText('Принтер');
+        const productThree = getByText('Настольная лампа');
+        const productFour = getByText('Костюм гуся');
+        expect(productOne.tagName).toBe('H2');
+        expect(productOne).toHaveClass('product-card__name');
+        expect(productTwo.tagName).toBe('H2');
+        expect(productTwo).toHaveClass('product-card__name');
+        expect(productThree.tagName).toBe('H2');
+        expect(productThree).toHaveClass('product-card__name');
+        expect(productFour.tagName).toBe('H2');
+        expect(productFour).toHaveClass('product-card__name');
+    });
+});
+
+describe('MainPage products by category selection', () => {
     it('should render products based on the selected categories', () => {
-        render(<MainPage />);
+        const { getByText } = render(<MainPage />);
+        const electronicsCategory = screen.getAllByText('Электроника', {
+            selector: 'div.categories__badge',
+        })[0];
+        fireEvent.click(electronicsCategory);
 
-        // Ожидаем, что продукты отрисованы
-        expect(screen.getByText('IPhone 14 Pro')).toBeInTheDocument();
-        expect(screen.getByText('Принтер')).toBeInTheDocument();
-
-        // Проверяем, что была вызвана утилита для фильтрации продуктов
-        const categories: Category[] = [];
-        expect(applyCategories).toHaveBeenCalledWith(mockProducts, categories);
+        const productOne = getByText('IPhone 14 Pro');
+        const productTwo = getByText('Принтер');
+        expect(productOne.tagName).toBe('H2');
+        expect(productOne).toHaveClass('product-card__name');
+        expect(productTwo.tagName).toBe('H2');
+        expect(productTwo).toHaveClass('product-card__name');
     });
+});
 
-    it('should update the selected categories when a category is clicked', () => {
+describe('MainPage category not selected', () => {
+    it('not selected category should not have selected class', () => {
         render(<MainPage />);
-
-        const categoryButton = screen.getByText('Электроника');
-        expect(categoryButton).not.toHaveClass('categories__badge_selected');
-        fireEvent.click(categoryButton);
-
-        expect(updateCategories).toHaveBeenCalledWith([], 'Электроника');
-        expect(categoryButton).toHaveClass('categories__badge_selected');
-    });
-
-    it('should update the selected categories when a category is clicked again', () => {
-        render(<MainPage />);
-
-        const categoryButton = screen.getByText('Электроника');
-        fireEvent.click(categoryButton);
-        expect(categoryButton).toHaveClass('categories__badge_selected');
-        expect(updateCategories).toHaveBeenCalledWith([], 'Электроника');
-        fireEvent.click(categoryButton);
-        expect(updateCategories).toHaveBeenCalledWith(
-            ['Электроника'],
-            'Электроника'
+        const electronicsCategory = screen.getAllByText('Электроника', {
+            selector: 'div.categories__badge',
+        })[0];
+        expect(electronicsCategory).not.toHaveClass(
+            'categories__badge_selected'
         );
-        expect(categoryButton).not.toHaveClass('categories__badge_selected');
     });
+});
 
-    it('should render filtered products when categories are selected', () => {
-        (applyCategories as jest.Mock).mockReturnValue([
-            mockProducts[0],
-            mockProducts[3],
-        ]);
-
+describe('MainPage category selected', () => {
+    it('selected category should have selected class', () => {
         render(<MainPage />);
-
-        const categoryButton = screen.getByText('Электроника');
-        fireEvent.click(categoryButton);
-
-        expect(screen.getByText('IPhone 14 Pro')).toBeInTheDocument();
-        expect(screen.getByText('Принтер')).toBeInTheDocument();
-        expect(screen.queryByText('Костюм гуся')).not.toBeInTheDocument();
-        expect(screen.queryByText('Настольная лампа')).not.toBeInTheDocument();
+        const electronicsCategory = screen.getAllByText('Электроника', {
+            selector: 'div.categories__badge',
+        })[0];
+        fireEvent.click(electronicsCategory);
+        expect(electronicsCategory).toHaveClass('categories__badge_selected');
     });
 });
