@@ -49,9 +49,9 @@ describe('MainPage products no category', () => {
 describe('MainPage products by category selection', () => {
     it('should render products based on the selected categories', () => {
         const { getByText } = render(<MainPage />);
-        const electronicsCategory = screen.getAllByText('Электроника', {
+        const electronicsCategory = screen.getByText('Электроника', {
             selector: 'div.categories__badge',
-        })[0];
+        });
         fireEvent.click(electronicsCategory);
 
         const productOne = getByText('IPhone 14 Pro');
@@ -66,9 +66,9 @@ describe('MainPage products by category selection', () => {
 describe('MainPage category not selected', () => {
     it('not selected category should not have selected class', () => {
         render(<MainPage />);
-        const electronicsCategory = screen.getAllByText('Электроника', {
+        const electronicsCategory = screen.getByText('Электроника', {
             selector: 'div.categories__badge',
-        })[0];
+        });
         expect(electronicsCategory).not.toHaveClass(
             'categories__badge_selected'
         );
@@ -78,9 +78,9 @@ describe('MainPage category not selected', () => {
 describe('MainPage category selected', () => {
     it('selected category should have selected class', () => {
         render(<MainPage />);
-        const electronicsCategory = screen.getAllByText('Электроника', {
+        const electronicsCategory = screen.getByText('Электроника', {
             selector: 'div.categories__badge',
-        })[0];
+        });
         fireEvent.click(electronicsCategory);
         expect(electronicsCategory).toHaveClass('categories__badge_selected');
     });
